@@ -40,7 +40,6 @@
 
 using boost::asio::ip::udp;
 
-
 using glm::vec3;
 using glm::vec4;
 using glm::mat4;
@@ -105,6 +104,7 @@ void initialize(int argc, char *argv[]);
 void loadTextures();
 
 int counter = 0;
+int keyState = 0;
 
 boost::asio::io_service io_service;
 
@@ -136,11 +136,12 @@ public:
 	}
 	int get_keyState()
 	{
-		return 0;
+		return recv_buf_[0];
 	}
 
-	void receive(){
-		socket_.async_receive_from(boost::asio::buffer(recv_buf_), remote_endpoint_,
+	void receive()
+	{
+		socket_.async_receive_from(boost::asio::buffer(recv_mat_), remote_endpoint_,
 			boost::bind(&udp_client::handle_receive, this,
 			boost::asio::placeholders::error,
 			boost::asio::placeholders::bytes_transferred));
@@ -154,7 +155,8 @@ private:
 	char data_[max_length];
 
 	boost::array<int, 1> send_buf_ = { { 0 } };
-	boost::array<mat4, 1> recv_buf_;
+	boost::array<int, 1> recv_buf_ = { { 0 } };
+	boost::array<mat4, 1> recv_mat_;
 
 	udp::endpoint remote_endpoint_;
 
@@ -175,8 +177,8 @@ private:
 	void handle_receive(const boost::system::error_code& error,
 		std::size_t len)
 	{
-		//std::cout << "Receiving: " << recv_buf_[0] << std::endl;
-		player_list[0]->setModelM(recv_buf_[0]);
+		std::cout << "Receiving: " << std::endl;
+		player_list[0]->setModelM(recv_mat_[0]);
 	}
 
 	void handle_send(boost::shared_ptr<std::string> /*message*/,
@@ -193,6 +195,7 @@ private:
 	}
 };
 udp_client* cli;
+
 void Window::idleCallback(void)
 {
 	//print fps
@@ -381,10 +384,9 @@ void Window::displayCallback(void)
 }
 
 void server_update(int value){
-	//This is where we would be doing the stuffs
-
+	cout << "Server update called" << endl;
 	//Have to reset timer after
-	glutTimerFunc(500, server_update, 0);
+	glutTimerFunc(100, server_update, 0);
 }
 
 int main(int argc, char *argv[])
@@ -423,7 +425,7 @@ int main(int argc, char *argv[])
   glutPassiveMotionFunc(passiveMotionFunc);
 
   //Added for server debuging
-  glutTimerFunc(500, server_update, 0);
+  glutTimerFunc(100, server_update, 0);
 
   glutKeyboardFunc(keyboard);
   glutKeyboardUpFunc(keyUp);
@@ -441,24 +443,16 @@ int main(int argc, char *argv[])
 
 void keyboard(unsigned char key, int, int){
 	if (key == 'a'){
-		scene->setHMove(0,-1);
-		cli->send_keyState(0);
-		io_service.poll();
+		keyState = keyState | 1;
 	}
 	if (key == 'd'){
-		scene->setHMove(0,1);
-		cli->send_keyState(2);
-		io_service.poll();
+		keyState = keyState | 1 << 1;
 	}
 	if (key == 'w'){
-		scene->setVMove(0,1);
-		cli->send_keyState(4);
-		io_service.poll();
+		keyState = keyState | 1 << 2;
 	}
 	if (key == 's'){
-		scene->setVMove(0,-1);
-		cli->send_keyState(6);
-		io_service.poll();
+		keyState = keyState | 1 << 3;
 	}
 	if (key == 27){
 		exit(0);
@@ -466,28 +460,54 @@ void keyboard(unsigned char key, int, int){
 	if (key == ' '){
 		scene->jump(0);
 	}
+	cli->send_keyState(keyState);
+	io_service.poll();
+	/*int retState = cli->get_keyState();
+	io_service.poll();
+
+	if (retState & 1){
+	scene->setHMove(0, -1);
+	}
+	if (retState & 1 << 1){
+	scene->setHMove(0, 1);
+	}
+	if (retState & 1 << 2){
+	scene->setVMove(0, 1);
+	}
+	if (retState & 1 << 3){
+	scene->setVMove(0, -1);
+	}*/
 }
 void keyUp (unsigned char key, int x, int y) {  
 	if (key == 'a'){
-		scene->cancelHMove(0,-1);
-		cli->send_keyState(1);
-		io_service.poll();
+		keyState = keyState & 0;
 	}
 	if (key == 'd'){
-		scene->cancelHMove(0,1);
-		cli->send_keyState(3);
-		io_service.poll();
+		keyState = keyState & 0 << 1;
 	}
 	if (key == 'w'){
-		scene->cancelVMove(0,1);
-		cli->send_keyState(5);
-		io_service.poll();
+		keyState = keyState & 0 << 2;
 	}
 	if (key == 's'){
-		scene->cancelVMove(0,-1);
-		cli->send_keyState(7);
-		io_service.poll();
+		keyState = keyState & 0 << 3;
 	}
+	cli->send_keyState(keyState);
+	io_service.poll();
+	/*int retState = cli->get_keyState();
+	io_service.poll();
+
+	if (!(retState | 0)){
+		scene->cancelHMove(0, -1);
+	}
+	if (!(retState | 0 << 1)){
+		scene->cancelHMove(0, 1);
+	}
+	if (!(retState | 0 << 2)){
+		scene->cancelVMove(0, 1);
+	}
+	if (!(retState | 0 << 3)){
+		scene->cancelVMove(0, -1);
+	}*/
 }
 void mouseFunc(int button, int state, int x, int y)
 {
