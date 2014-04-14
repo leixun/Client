@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
