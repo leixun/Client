@@ -101,6 +101,7 @@
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureScreen.h" />
+    <ClInclude Include="udpClient.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
