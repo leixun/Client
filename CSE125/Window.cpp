@@ -2,13 +2,11 @@
 #include <iostream>
 #include <string>
 #include <time.h>
-#include <boost/array.hpp>
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/asio.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <boost/asio.hpp>
+#include "udpClient.h"
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include "Window.h"
@@ -37,8 +35,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
-using boost::asio::ip::udp;
 
 using glm::vec3;
 using glm::vec4;
@@ -105,96 +101,10 @@ void loadTextures();
 
 int counter = 0;
 int keyState = 0;
+boost::array<mat4, 1> m;
 
 boost::asio::io_service io_service;
-
-class udp_client
-{
-
-public:
-	udp_client(boost::asio::io_service& io_service, const std::string& host, const std::string& port)
-		: io_service_(io_service), socket_(io_service, udp::endpoint(udp::v4(), 0)) {
-		udp::resolver resolver(io_service);
-		udp::resolver::query query(udp::v4(), host, port);
-		udp::resolver::iterator itr = resolver.resolve(query);
-
-		remote_endpoint_ = *itr;
-
-		// Possibly send some kind of init message to server on this initial send
-		start_send();
-	}
-
-	~udp_client()
-	{
-		socket_.close();
-	}
-
-	void send_keyState(int keyState)
-	{
-		send_buf_[0] = keyState;
-		start_send();
-	}
-	int get_keyState()
-	{
-		return recv_buf_[0];
-	}
-
-	void receive()
-	{
-		socket_.async_receive_from(boost::asio::buffer(recv_mat_), remote_endpoint_,
-			boost::bind(&udp_client::handle_receive, this,
-			boost::asio::placeholders::error,
-			boost::asio::placeholders::bytes_transferred));
-	}
-
-
-private:
-	boost::asio::io_service& io_service_;
-	udp::socket socket_;
-	enum { max_length = 1024 };
-	char data_[max_length];
-
-	boost::array<int, 1> send_buf_ = { { 0 } };
-	boost::array<int, 1> recv_buf_ = { { 0 } };
-	boost::array<mat4, 1> recv_mat_;
-
-	udp::endpoint remote_endpoint_;
-
-	void start_send()
-	{
-		//std::cout << "Sending: " << send_buf_.data() << std::endl;
-
-		boost::shared_ptr<std::string> message(
-			new std::string("this is a string"));
-
-		socket_.async_send_to(
-			boost::asio::buffer(send_buf_), remote_endpoint_,
-			boost::bind(&udp_client::handle_send, this, message,
-			boost::asio::placeholders::error,
-			boost::asio::placeholders::bytes_transferred));
-	}
-
-	void handle_receive(const boost::system::error_code& error,
-		std::size_t len)
-	{
-		std::cout << "Receiving: " << std::endl;
-		player_list[0]->setModelM(recv_mat_[0]);
-	}
-
-	void handle_send(boost::shared_ptr<std::string> /*message*/,
-		const boost::system::error_code& error,
-		std::size_t /*bytes_transferred*/)
-	{
-		/*if (!error || error == boost::asio::error::message_size)
-		{
-			socket_.async_receive_from(boost::asio::buffer(recv_buf_), remote_endpoint_,
-				boost::bind(&udp_client::handle_receive, this,
-				boost::asio::placeholders::error,
-				boost::asio::placeholders::bytes_transferred));
-		}*/
-	}
-};
-udp_client* cli;
+udpClient* cli;
 
 void Window::idleCallback(void)
 {
@@ -222,9 +132,6 @@ void Window::idleCallback(void)
 	//for (int i = 0; i < player_list.size(); i++){
 	//	player_list[i]->setModelM(playerMs[i]);
 	//}
-
-	cli->receive();
-	io_service.poll();
 
 	View = cam->getViewM();
 	updateShaders();
@@ -385,6 +292,15 @@ void Window::displayCallback(void)
 
 void server_update(int value){
 	cout << "Server update called" << endl;
+
+	m = cli->get_PosUpdate();
+	io_service.poll();
+	cout << (m[0])[0][0] << (m[0])[0][1] << (m[0])[0][2] << (m[0])[0][3] << endl;
+	cout << (m[0])[1][0] << (m[0])[1][1] << (m[0])[1][2] << (m[0])[1][3] << endl;
+	cout << (m[0])[2][0] << (m[0])[2][1] << (m[0])[2][2] << (m[0])[2][3] << endl;
+	cout << (m[0])[3][0] << (m[0])[3][1] << (m[0])[3][2] << (m[0])[3][3] << endl;
+	player_list[0]->setModelM(m[0]);
+
 	//Have to reset timer after
 	glutTimerFunc(100, server_update, 0);
 }
@@ -424,7 +340,7 @@ int main(int argc, char *argv[])
   glutMotionFunc(motionFunc);
   glutPassiveMotionFunc(passiveMotionFunc);
 
-  //Added for server debuging
+  //Timer for network
   glutTimerFunc(100, server_update, 0);
 
   glutKeyboardFunc(keyboard);
@@ -462,21 +378,6 @@ void keyboard(unsigned char key, int, int){
 	}
 	cli->send_keyState(keyState);
 	io_service.poll();
-	/*int retState = cli->get_keyState();
-	io_service.poll();
-
-	if (retState & 1){
-	scene->setHMove(0, -1);
-	}
-	if (retState & 1 << 1){
-	scene->setHMove(0, 1);
-	}
-	if (retState & 1 << 2){
-	scene->setVMove(0, 1);
-	}
-	if (retState & 1 << 3){
-	scene->setVMove(0, -1);
-	}*/
 }
 void keyUp (unsigned char key, int x, int y) {  
 	if (key == 'a'){
@@ -493,21 +394,6 @@ void keyUp (unsigned char key, int x, int y) {
 	}
 	cli->send_keyState(keyState);
 	io_service.poll();
-	/*int retState = cli->get_keyState();
-	io_service.poll();
-
-	if (!(retState | 0)){
-		scene->cancelHMove(0, -1);
-	}
-	if (!(retState | 0 << 1)){
-		scene->cancelHMove(0, 1);
-	}
-	if (!(retState | 0 << 2)){
-		scene->cancelVMove(0, 1);
-	}
-	if (!(retState | 0 << 3)){
-		scene->cancelVMove(0, -1);
-	}*/
 }
 void mouseFunc(int button, int state, int x, int y)
 {
@@ -768,7 +654,7 @@ void initialize(int argc, char *argv[])
 
 	try
 	{
-		cli = new udp_client(io_service, "127.0.0.10", "13");
+		cli = new udpClient(io_service, "127.0.0.10", "13");
 
 	}
 	catch (std::exception& e)
