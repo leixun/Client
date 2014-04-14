@@ -294,6 +294,7 @@ void Window::displayCallback(void)
 void server_update(int value){
 	m = cli->get_PosUpdate();
 	io_service.poll();
+
 	// Print out matrix contents
 	/*
 	cout << (m[0])[0][0] << (m[0])[0][1] << (m[0])[0][2] << (m[0])[0][3] << endl;
@@ -304,7 +305,7 @@ void server_update(int value){
 	player_list[0]->setModelM(m[0]);
 
 	//Have to reset timer after
-	glutTimerFunc(100, server_update, 0);
+	glutTimerFunc(15, server_update, 0);
 }
 
 int main(int argc, char *argv[])
@@ -343,7 +344,7 @@ int main(int argc, char *argv[])
   glutPassiveMotionFunc(passiveMotionFunc);
 
   //Timer for network
-  glutTimerFunc(100, server_update, 0);
+  glutTimerFunc(15, server_update, 0);
 
   glutKeyboardFunc(keyboard);
   glutKeyboardUpFunc(keyUp);
