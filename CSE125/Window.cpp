@@ -377,23 +377,26 @@ void keyboard(unsigned char key, int, int){
 		exit(0);
 	}
 	if (key == ' '){
-		scene->jump(0);
+		keyState = keyState | 1 << 4;
 	}
 	cli->send_keyState(keyState);
 	io_service.poll();
 }
 void keyUp (unsigned char key, int x, int y) {  
 	if (key == 'a'){
-		keyState = keyState & 0;
+		keyState = keyState & ~1;
 	}
 	if (key == 'd'){
-		keyState = keyState & 0 << 1;
+		keyState = keyState & ~(1 << 1);
 	}
 	if (key == 'w'){
-		keyState = keyState & 0 << 2;
+		keyState = keyState & ~(1 << 2);
 	}
 	if (key == 's'){
-		keyState = keyState & 0 << 3;
+		keyState = keyState & ~(1 << 3);
+	}
+	if (key == ' '){
+		keyState = keyState & ~(1 << 4);
 	}
 	cli->send_keyState(keyState);
 	io_service.poll();
@@ -422,7 +425,7 @@ void passiveMotionFunc(int x, int y){
 		//cam->preRotate(glm::rotate(mat4(1.0), cam_sp*dy, vec3(1, 0, 0)));
 		//cube->postRotate(glm::rotate(mat4(1.0), -cam_sp*dx, vec3(0, 1, 0)));
 		cam->pushRot(cam_sp*dy);
-		scene->pushRot(0,-cam_sp*dx);
+		//scene->pushRot(0,-cam_sp*dx);
 	}
 
 	if (abs(Window::width / 2 - lastX)>25 || abs(Window::height / 2 - lastY)>25){
@@ -496,9 +499,6 @@ void initialize(int argc, char *argv[])
 	glDrawBuffers(1, drawBufs);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	scene = new Scene();
-	scene->setGravity(vec3(0.0, -9.8, 0.0));
 
 	light[0].type=0;
 	light[0].pos = vec4(10,10,0,1);
