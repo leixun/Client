@@ -107,6 +107,8 @@ boost::array<mat4, 1> m;
 boost::asio::io_service io_service;
 udpClient* cli;
 
+int playerID = -1;
+
 void Window::idleCallback(void)
 {
 	//print fps
@@ -615,7 +617,7 @@ void initialize(int argc, char *argv[])
 	//scene->addStationary(cube5);
 
 	cam = new Camera();
-	cam->attach(cube);
+	cam->attach(player_list[0]);
 	cam->postTrans(glm::translate(vec3(0, 1, 4)));
 
 	//Name and type

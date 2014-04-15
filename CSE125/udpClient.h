@@ -60,6 +60,7 @@ private:
 	boost::array<int, 2> send_buf_ = { { 0 } };
 	boost::array<int, 1> recv_buf_ = { { 0 } };
 	boost::array<mat4, 1> recv_mat_;
+	int playerID=-1;
 
 	udp::endpoint remote_endpoint_;
 
