@@ -35,6 +35,11 @@ public:
 		send_buf_[0] = keyState;
 		start_send();
 	}
+	void send_camRot(int rot){
+		send_buf_[1] = rot;
+		start_send();
+		send_buf_[1] = 0;
+	}
 	int get_keyState()
 	{
 		return recv_buf_[0];
@@ -52,7 +57,7 @@ private:
 	enum { max_length = 1024 };
 	char data_[max_length];
 
-	boost::array<int, 1> send_buf_ = { { 0 } };
+	boost::array<int, 2> send_buf_ = { { 0 } };
 	boost::array<int, 1> recv_buf_ = { { 0 } };
 	boost::array<mat4, 1> recv_mat_;
 

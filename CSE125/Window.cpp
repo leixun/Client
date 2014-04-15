@@ -422,10 +422,9 @@ void passiveMotionFunc(int x, int y){
 	lastY = y;
 
 	if (fabs(dx) < 250 && fabs(dy) < 250){
-		//cam->preRotate(glm::rotate(mat4(1.0), cam_sp*dy, vec3(1, 0, 0)));
-		//cube->postRotate(glm::rotate(mat4(1.0), -cam_sp*dx, vec3(0, 1, 0)));
 		cam->pushRot(cam_sp*dy);
-		//scene->pushRot(0,-cam_sp*dx);
+		cli->send_camRot(dx);
+		io_service.poll();
 	}
 
 	if (abs(Window::width / 2 - lastX)>25 || abs(Window::height / 2 - lastY)>25){
