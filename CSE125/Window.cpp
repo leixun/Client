@@ -100,9 +100,10 @@ void setupShaders();
 void initialize(int argc, char *argv[]);
 void loadTextures();
 
+int pID = 0;
 int counter = 0;
 int keyState = 0;
-boost::array<mat4, 1> m;
+boost::array<mat4, 4> m;
 
 //Initialize some vectors
 std::vector <pair<string, mat4>>* stateVec = new vector<pair<string, mat4>>;
@@ -300,9 +301,12 @@ void Window::displayCallback(void)
 void server_update(int value){
 	//Read position vector from server
 	recvVec = cli->read();
-	std::cout << "recvVec string:" << recvVec->front().first << std::endl;
-	m[0] = recvVec->front().second;
 	io_service.poll();
+	std::cout << "recvVec string:" << recvVec->front().first << std::endl;
+	m[0] = (*recvVec)[0].second;
+	m[1] = (*recvVec)[1].second;
+	m[2] = (*recvVec)[2].second;
+	m[3] = (*recvVec)[3].second;
 
 	// Print out matrix contents
 	/*
@@ -312,6 +316,9 @@ void server_update(int value){
 	cout << (m[0])[3][0] << (m[0])[3][1] << (m[0])[3][2] << (m[0])[3][3] << endl;
 	*/
 	player_list[0]->setModelM(m[0]);
+	player_list[1]->setModelM(m[1]);
+	player_list[2]->setModelM(m[2]);
+	player_list[3]->setModelM(m[3]);
 
 	//Have to reset timer after
 	glutTimerFunc(15, server_update, 0);
@@ -389,7 +396,7 @@ void keyboard(unsigned char key, int, int){
 		keyState = keyState | 1 << 4;
 	}
 	//Send key int to server as matrix with all values being keyState
-	stateVec->front() = std::make_pair("keyUpdate", mat4((float)keyState));
+	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
 	cli->write(*stateVec);
 	io_service.poll();
 }
@@ -409,7 +416,7 @@ void keyUp (unsigned char key, int x, int y) {
 	if (key == ' '){
 		keyState = keyState & ~(1 << 4);
 	}
-	stateVec->front() = std::make_pair("keyUpdate", mat4((float)keyState));
+	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
 	cli->write(*stateVec);
 	io_service.poll();
 }
@@ -436,7 +443,7 @@ void passiveMotionFunc(int x, int y){
 	if (fabs(dx) < 250 && fabs(dy) < 250){
 		cam->pushRot(cam_sp*dy);
 		//Update camera position in vector and send
-		stateVec->back() = std::make_pair("cameraUpdate", mat4((float)dx));
+		stateVec->back() = std::make_pair(std::to_string(pID), mat4((float)dx));
 		cli->write(*stateVec);
 		io_service.poll();
 	}
@@ -565,7 +572,7 @@ void initialize(int argc, char *argv[])
 	cube2->setType("Cube");
 	cube2->setName("Test Cube");
 	//Add Cube to the draw list
-	stationary_list.push_back(cube2);
+	player_list.push_back(cube2);
 	//scene->addStationary(cube2);
 
 	Cube* cube3 = new Cube();
@@ -585,7 +592,7 @@ void initialize(int argc, char *argv[])
 	cube3->setType("Cube");
 	cube3->setName("Test Cube2");
 	//Add Cube to the draw list
-	stationary_list.push_back(cube3);
+	player_list.push_back(cube3);
 	//scene->addStationary(cube3);
 
 	Cube* cube4 = new Cube();
@@ -605,7 +612,7 @@ void initialize(int argc, char *argv[])
 	cube4->setType("Cube");
 	cube4->setName("Test Cube3");
 	//Add Cube to the draw list
-	stationary_list.push_back(cube4);
+	player_list.push_back(cube4);
 	//scene->addStationary(cube4);
 
 	Cube* cube5 = new Cube();
@@ -627,10 +634,6 @@ void initialize(int argc, char *argv[])
 	//Add Cube to the draw list
 	stationary_list.push_back(cube5);
 	//scene->addStationary(cube5);
-
-	cam = new Camera();
-	cam->attach(player_list[0]);
-	cam->postTrans(glm::translate(vec3(0, 1, 4)));
 
 	//Name and type
 	//cam->setType("Camera");
@@ -669,18 +672,28 @@ void initialize(int argc, char *argv[])
 	m_pMesh2->LoadMesh("Model/monky2014_12.dae");
 
 	recvVec->push_back(std::make_pair("initRecvPos_c", mat4(0.0f)));
+	recvVec->push_back(std::make_pair("initRecvPos_c", mat4(0.0f)));
+	recvVec->push_back(std::make_pair("initRecvPos_c", mat4(0.0f)));
+	recvVec->push_back(std::make_pair("initRecvPos_c", mat4(0.0f)));
 	stateVec->push_back(std::make_pair("initKey_c", mat4(0.0f)));
 	stateVec->push_back(std::make_pair("initCam_c", mat4(0.0f)));
 
 	try
 	{
-		cli = new tcp_client(io_service, "127.0.0.10", "13");
-
+		cli = new tcp_client(io_service, "localhost", "13");
+		io_service.run_one();
+		io_service.run_one();
+		pID = cli->pID();
 	}
 	catch (std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
 	}
+
+	cam = new Camera();
+	cam->attach(player_list[pID]);
+	cam->postTrans(glm::translate(vec3(0, 1, 4)));
+
 }
 void loadTextures(){
 	//cloth texture
