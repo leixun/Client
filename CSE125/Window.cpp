@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <boost/asio.hpp>
-#include "udpClient.h"
+#include "Client.h"
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include "Window.h"
@@ -104,8 +104,12 @@ int counter = 0;
 int keyState = 0;
 boost::array<mat4, 1> m;
 
+//Initialize some vectors
+std::vector <pair<string, mat4>>* stateVec = new vector<pair<string, mat4>>;
+std::vector <pair<string, mat4>>* recvVec = new vector<pair<string, mat4>>;
+
 boost::asio::io_service io_service;
-udpClient* cli;
+tcp_client* cli;
 
 int playerID = -1;
 
@@ -294,7 +298,10 @@ void Window::displayCallback(void)
 }
 
 void server_update(int value){
-	m = cli->get_PosUpdate();
+	//Read position vector from server
+	recvVec = cli->read();
+	std::cout << "recvVec string:" << recvVec->front().first << std::endl;
+	m[0] = recvVec->front().second;
 	io_service.poll();
 
 	// Print out matrix contents
@@ -381,7 +388,9 @@ void keyboard(unsigned char key, int, int){
 	if (key == ' '){
 		keyState = keyState | 1 << 4;
 	}
-	cli->send_keyState(keyState);
+	//Send key int to server as matrix with all values being keyState
+	stateVec->front() = std::make_pair("keyUpdate", mat4((float)keyState));
+	cli->write(*stateVec);
 	io_service.poll();
 }
 void keyUp (unsigned char key, int x, int y) {  
@@ -400,7 +409,8 @@ void keyUp (unsigned char key, int x, int y) {
 	if (key == ' '){
 		keyState = keyState & ~(1 << 4);
 	}
-	cli->send_keyState(keyState);
+	stateVec->front() = std::make_pair("keyUpdate", mat4((float)keyState));
+	cli->write(*stateVec);
 	io_service.poll();
 }
 void mouseFunc(int button, int state, int x, int y)
@@ -425,7 +435,9 @@ void passiveMotionFunc(int x, int y){
 
 	if (fabs(dx) < 250 && fabs(dy) < 250){
 		cam->pushRot(cam_sp*dy);
-		cli->send_camRot(dx);
+		//Update camera position in vector and send
+		stateVec->back() = std::make_pair("cameraUpdate", mat4((float)dx));
+		cli->write(*stateVec);
 		io_service.poll();
 	}
 
@@ -656,9 +668,13 @@ void initialize(int argc, char *argv[])
 	m_pMesh2 = new Mesh();
 	m_pMesh2->LoadMesh("Model/monky2014_12.dae");
 
+	recvVec->push_back(std::make_pair("initRecvPos_c", mat4(0.0f)));
+	stateVec->push_back(std::make_pair("initKey_c", mat4(0.0f)));
+	stateVec->push_back(std::make_pair("initCam_c", mat4(0.0f)));
+
 	try
 	{
-		cli = new udpClient(io_service, "127.0.0.10", "13");
+		cli = new tcp_client(io_service, "127.0.0.10", "13");
 
 	}
 	catch (std::exception& e)
