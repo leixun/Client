@@ -72,7 +72,7 @@
     <ClInclude Include="ConfigSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="udpClient.h">
+    <ClInclude Include="Client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

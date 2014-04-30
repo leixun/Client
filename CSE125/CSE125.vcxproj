@@ -85,6 +85,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Client.h" />
     <ClInclude Include="ConfigSettings.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="glslprogram.h" />
@@ -101,7 +102,6 @@
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureScreen.h" />
-    <ClInclude Include="udpClient.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
