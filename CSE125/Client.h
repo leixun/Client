@@ -59,24 +59,6 @@ public:
 
 	std::vector <std::pair<string, mat4>>* read()
 	{
-		std::cout << "read called" << std::endl;
-		std::cout << "recvVec string:" << ret_.front().first << std::endl;
-		/*std::cout << "recvVec dat:" << ret_.front().second[0][0] <<
-			ret_.front().second[0][1] <<
-			ret_.front().second[0][2] <<
-			ret_.front().second[0][3] <<
-			ret_.front().second[1][0] <<
-			ret_.front().second[1][1] <<
-			ret_.front().second[1][2] <<
-			ret_.front().second[1][3] <<
-			ret_.front().second[2][0] <<
-			ret_.front().second[2][1] <<
-			ret_.front().second[2][2] <<
-			ret_.front().second[2][3] <<
-			ret_.front().second[3][0] <<
-			ret_.front().second[3][1] <<
-			ret_.front().second[3][2] <<
-			ret_.front().second[3][3] << std::endl;*/
 		return &ret_;
 	}
 
@@ -136,7 +118,7 @@ private:
 	{
 		if (!error)
 		{
-			/*::cout << "read called" << std::endl;
+			/*std::cout << "read called" << std::endl;
 			std::cout << "recvVec string:" << ret_.front().first << std::endl;
 			std::cout << "recvVec dat:" << ret_.front().second[0][0] <<
 				ret_.front().second[0][1] <<
@@ -153,9 +135,8 @@ private:
 				ret_.front().second[3][0] <<
 				ret_.front().second[3][1] <<
 				ret_.front().second[3][2] <<
-				ret_.front().second[3][3] << std::endl; */
-
-			std::cout << "Reading" << std::endl;
+				ret_.front().second[3][3] << std::endl;
+			std::cout << "Reading" << std::endl;*/
 			boost::asio::async_read(socket_,
 				boost::asio::buffer(ret_, 2048),
 				boost::bind(&tcp_client::handle_read, this,

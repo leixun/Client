@@ -301,6 +301,8 @@ void Window::displayCallback(void)
 
 void server_update(int value){
 	//Read position vector from server
+	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
+	stateVec->back() = std::make_pair(std::to_string(pID), mat4((float)cam_dx));
 	cli->write(*stateVec);
 	io_service.poll();
 	cam_dx = 0;
@@ -308,11 +310,10 @@ void server_update(int value){
 
 	recvVec = cli->read();
 	io_service.poll();
-	std::cout << "recvVec string:" << recvVec->front().first << std::endl;
-	m[0] = (*recvVec)[0].second;
-	m[1] = (*recvVec)[1].second;
-	m[2] = (*recvVec)[2].second;
-	m[3] = (*recvVec)[3].second;
+	m[atoi((*recvVec)[0].first.c_str())] = (*recvVec)[0].second;
+	m[atoi((*recvVec)[1].first.c_str())] = (*recvVec)[1].second;
+	m[atoi((*recvVec)[2].first.c_str())] = (*recvVec)[2].second;
+	m[atoi((*recvVec)[3].first.c_str())] = (*recvVec)[3].second;
 
 	// Print out matrix contents
 	/*
@@ -402,7 +403,6 @@ void keyboard(unsigned char key, int, int){
 		keyState = keyState | 1 << 4;
 	}
 	//Send key int to server as matrix with all values being keyState
-	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
 	//cli->write(*stateVec);
 	//io_service.poll();
 }
@@ -422,7 +422,6 @@ void keyUp (unsigned char key, int x, int y) {
 	if (key == ' '){
 		keyState = keyState & ~(1 << 4);
 	}
-	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
 	//cli->write(*stateVec);
 	//io_service.poll();
 }
@@ -450,7 +449,7 @@ void passiveMotionFunc(int x, int y){
 		cam->pushRot(cam_sp*dy);
 		cam_dx += dx;
 		//Update camera position in vector and send
-		stateVec->back() = std::make_pair(std::to_string(pID), mat4((float)cam_dx));
+		//stateVec->back() = std::make_pair(std::to_string(pID), mat4((float)cam_dx));
 		//cli->write(*stateVec);
 		//io_service.poll();
 	}
