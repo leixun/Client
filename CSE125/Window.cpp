@@ -84,6 +84,7 @@ int texScreenHeight = 512;
 
 Camera* cam;
 float cam_sp = 0.1;
+float cam_dx = 0;
 
 GLuint fboHandle;
 
@@ -300,6 +301,11 @@ void Window::displayCallback(void)
 
 void server_update(int value){
 	//Read position vector from server
+	cli->write(*stateVec);
+	io_service.poll();
+	cam_dx = 0;
+
+
 	recvVec = cli->read();
 	io_service.poll();
 	std::cout << "recvVec string:" << recvVec->front().first << std::endl;
@@ -397,8 +403,8 @@ void keyboard(unsigned char key, int, int){
 	}
 	//Send key int to server as matrix with all values being keyState
 	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
-	cli->write(*stateVec);
-	io_service.poll();
+	//cli->write(*stateVec);
+	//io_service.poll();
 }
 void keyUp (unsigned char key, int x, int y) {  
 	if (key == 'a'){
@@ -417,8 +423,8 @@ void keyUp (unsigned char key, int x, int y) {
 		keyState = keyState & ~(1 << 4);
 	}
 	stateVec->front() = std::make_pair(std::to_string(pID), mat4((float)keyState));
-	cli->write(*stateVec);
-	io_service.poll();
+	//cli->write(*stateVec);
+	//io_service.poll();
 }
 void mouseFunc(int button, int state, int x, int y)
 {
@@ -442,10 +448,11 @@ void passiveMotionFunc(int x, int y){
 
 	if (fabs(dx) < 250 && fabs(dy) < 250){
 		cam->pushRot(cam_sp*dy);
+		cam_dx += dx;
 		//Update camera position in vector and send
-		stateVec->back() = std::make_pair(std::to_string(pID), mat4((float)dx));
-		cli->write(*stateVec);
-		io_service.poll();
+		stateVec->back() = std::make_pair(std::to_string(pID), mat4((float)cam_dx));
+		//cli->write(*stateVec);
+		//io_service.poll();
 	}
 
 	if (abs(Window::width / 2 - lastX)>25 || abs(Window::height / 2 - lastY)>25){
@@ -684,6 +691,8 @@ void initialize(int argc, char *argv[])
 		io_service.run_one();
 		io_service.run_one();
 		pID = cli->pID();
+		std::cout << "pid: " << pID << std::endl;
+		system("pause");
 	}
 	catch (std::exception& e)
 	{
